@@ -44,6 +44,34 @@ jobs:
       - name: Build Hugo site
         run: hugo --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
 
+      - name: Generate sitemap from built pages
+        env:
+          SITE_BASE: "https://ylu916830-glitch.github.io/8/"
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from xml.sax.saxutils import escape
+
+          public = Path("public")
+          base = "https://ylu916830-glitch.github.io/8/"
+          urls = [base]
+          for index in sorted((public / "posts").glob("*/index.html")):
+              slug = index.parent.name
+              urls.append(f"{base}posts/{slug}/")
+
+          xml = ['<?xml version="1.0" encoding="UTF-8"?>',
+                 '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+          for url in urls:
+              xml.append("  <url>")
+              xml.append(f"    <loc>{escape(url)}</loc>")
+              xml.append("    <changefreq>weekly</changefreq>")
+              xml.append("    <priority>1.0</priority>" if url == base else "    <priority>0.7</priority>")
+              xml.append("  </url>")
+          xml.append("</urlset>")
+          (public / "sitemap.xml").write_text("\n".join(xml) + "\n", encoding="utf-8")
+          print(f"Sitemap URLs: {len(urls)}")
+          PY
+
       - name: Verify generated site
         run: |
           echo "Generated files:"
@@ -54,6 +82,9 @@ jobs:
           count=$(find public/posts -mindepth 2 -maxdepth 2 -type f -name index.html | wc -l)
           echo "Post pages: $count"
           test "$count" -eq 100
+          sitemap_count=$(grep -c '<loc>' public/sitemap.xml)
+          echo "Sitemap URLs: $sitemap_count"
+          test "$sitemap_count" -eq 101
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
