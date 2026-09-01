@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ylu916830-glitch.github.io/8/sitemap.xml
