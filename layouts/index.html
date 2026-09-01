@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ .Site.Title }}</title>
+  <meta name="description" content="{{ .Site.Params.description }}">
+  <link rel="canonical" href="{{ .Permalink }}">
+</head>
+<body>
+  <main>
+    <h1>{{ .Site.Title }}</h1>
+    <p>{{ .Site.Params.description }}</p>
+    <h2>文章</h2>
+    <ul>
+      {{ range where .Site.RegularPages "Section" "posts" }}
+      <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+      {{ end }}
+    </ul>
+  </main>
+</body>
+</html>
