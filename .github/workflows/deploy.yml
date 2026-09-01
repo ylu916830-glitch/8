@@ -1,4 +1,4 @@
-name: Hugo Build and Baidu SEO
+name: Deploy Hugo site
 
 on:
   push:
@@ -7,21 +7,31 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  build-and-submit:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
       - name: Generate 100 posts
         run: python generate_posts.py
+
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
@@ -29,34 +39,28 @@ jobs:
           hugo-version: latest
           extended: true
 
-      - name: Build site
-        run: hugo --minify
+      - name: Build Hugo site
+        run: hugo --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
 
-      - name: Prepare Baidu URL list
+      - name: Verify generated site
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          base = "https://ylu916830-glitch.github.io/8"
-          urls = []
-          for p in Path("public/posts").glob("*/index.html"):
-              rel = p.relative_to("public").parent.as_posix().rstrip("/")
-              urls.append(f"{base}/{rel}/")
-          urls.sort()
-          Path("baidu-urls.txt").write_text("\n".join(urls) + "\n", encoding="utf-8")
-          print(f"Prepared {len(urls)} URLs")
-          PY
+          test -f public/index.html
+          test -f public/sitemap.xml
+          test -f public/robots.txt
+          test "$(find public/posts -mindepth 1 -maxdepth 2 -name index.html | wc -l)" -eq 100
 
-      - name: Submit URLs to Baidu
-        if: ${{ secrets.BAIDU_TOKEN != '' }}
-        env:
-          BAIDU_TOKEN: ${{ secrets.BAIDU_TOKEN }}
-        run: |
-          curl --fail --silent --show-error \
-            -H "Content-Type: text/plain" \
-            --data-binary @baidu-urls.txt \
-            "https://data.zz.baidu.com/urls?site=https://ylu916830-glitch.github.io/8/&token=${BAIDU_TOKEN}"
-
-      - name: Upload generated site artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
         with:
           path: public
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
