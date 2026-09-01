@@ -1,0 +1,62 @@
+name: Hugo Build and Baidu SEO
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-submit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Generate 100 posts
+        run: python generate_posts.py
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: latest
+          extended: true
+
+      - name: Build site
+        run: hugo --minify
+
+      - name: Prepare Baidu URL list
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          base = "https://ylu916830-glitch.github.io/8"
+          urls = []
+          for p in Path("public/posts").glob("*/index.html"):
+              rel = p.relative_to("public").parent.as_posix().rstrip("/")
+              urls.append(f"{base}/{rel}/")
+          urls.sort()
+          Path("baidu-urls.txt").write_text("\n".join(urls) + "\n", encoding="utf-8")
+          print(f"Prepared {len(urls)} URLs")
+          PY
+
+      - name: Submit URLs to Baidu
+        if: ${{ secrets.BAIDU_TOKEN != '' }}
+        env:
+          BAIDU_TOKEN: ${{ secrets.BAIDU_TOKEN }}
+        run: |
+          curl --fail --silent --show-error \
+            -H "Content-Type: text/plain" \
+            --data-binary @baidu-urls.txt \
+            "https://data.zz.baidu.com/urls?site=https://ylu916830-glitch.github.io/8/&token=${BAIDU_TOKEN}"
+
+      - name: Upload generated site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
