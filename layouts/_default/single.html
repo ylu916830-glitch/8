@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ .Title }}</title>
+  <meta name="description" content="{{ .Description }}">
+  <meta name="keywords" content="{{ .Params.keywords }}">
+  <link rel="canonical" href="{{ .Permalink }}">
+</head>
+<body>
+  <main>
+    <article>
+      <h1>{{ .Title }}</h1>
+      <p><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time></p>
+      {{ .Content }}
+    </article>
+  </main>
+</body>
+</html>
