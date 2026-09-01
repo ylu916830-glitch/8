@@ -51,7 +51,7 @@ jobs:
           test -f public/index.html
           test -f public/sitemap.xml
           test -f public/robots.txt
-          count=$(find public/posts -type f -name index.html | wc -l)
+          count=$(find public/posts -mindepth 2 -maxdepth 2 -type f -name index.html | wc -l)
           echo "Post pages: $count"
           test "$count" -eq 100
 
