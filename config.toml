@@ -1,0 +1,20 @@
+baseURL = "https://ylu916830-glitch.github.io/8/"
+languageCode = "zh-cn"
+title = "账号安全与平台风控技术科普"
+paginate = 20
+
+enableRobotsTXT = true
+
+[permalinks]
+  posts = "/posts/:filename/"
+
+[outputs]
+  home = ["HTML", "RSS", "SITEMAP"]
+
+[sitemap]
+  changefreq = "weekly"
+  priority = 0.7
+  filename = "sitemap.xml"
+
+[params]
+  description = "社交平台风控、账号安全、养号规范与合规转移技术科普。"
